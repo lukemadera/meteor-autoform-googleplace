@@ -7,6 +7,7 @@ https://developers.google.com/maps/documentation/javascript/examples/places-auto
 ## Demo
 
 [Demo](http://lukemadera-packages.meteor.com/af-googleplace-basic)
+
 [Source](https://github.com/lukemadera/meteor-packages/tree/master/autoform-googleplace/basic)
 
 
