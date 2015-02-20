@@ -4,6 +4,12 @@ An add-on Meteor package for aldeed:autoform. Provides a single custom input typ
 https://developers.google.com/maps/documentation/javascript/examples/places-autocomplete
 
 
+## Demo
+
+[Demo](http://lukemadera-packages.meteor.com/af-googleplace-basic)
+[Source](https://github.com/lukemadera/meteor-packages/tree/master/autoform-googleplace/basic)
+
+
 ## Dependencies
 
 - aldeed:autoform
