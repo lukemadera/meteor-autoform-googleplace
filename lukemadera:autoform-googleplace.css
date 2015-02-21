@@ -13,7 +13,7 @@
   border-bottom: solid 1px black;
   border-left: solid 1px black;
   border-right: solid 1px black;
-  padding: 5px 0;
+  padding: 0 5px;
   display: none;
 }
 .lm-autoform-google-place-predictions.visible {

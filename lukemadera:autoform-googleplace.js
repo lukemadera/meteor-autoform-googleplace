@@ -1,4 +1,5 @@
 var VAL ={};
+var OPTS ={};
 
 var CLASSES ={
   predictions: 'hidden'
@@ -162,6 +163,13 @@ AutoForm.addInputType("googleplace", {
 });
 
 Template.afGooglePlace.rendered =function() {
+  OPTS =EJSON.clone(this.data.atts.opts);
+  if(OPTS ===undefined) {
+    OPTS ={
+      type: 'service'
+    };
+  }
+
   // var self =this;
   var ele =this.find('input');
   ELES.input =ele;
@@ -175,53 +183,64 @@ Template.afGooglePlace.rendered =function() {
     componentRestrictions: componentRestrictions
   };
 
-  if(0) {
-  //standard autocomplete
-  var autocomplete = new google.maps.places.Autocomplete(ele, options);
+  if(OPTS.type =='standard') {
+    //standard autocomplete
+    var autocomplete = new google.maps.places.Autocomplete(ele, options);
 
-  google.maps.event.addListener(autocomplete, 'place_changed', function() {
-    afGooglePlace.updatePlace(ele.value, autocomplete.getPlace(), {});
-  });
+    google.maps.event.addListener(autocomplete, 'place_changed', function() {
+      afGooglePlace.updatePlace(ele.value, autocomplete.getPlace(), {});
+    });
   }
   else {
-  //autocompleteservice (custom)
-  var autocompleteService =new google.maps.places.AutocompleteService();
-  ele.onkeyup =function(evt, params) {
-    options.input =ele.value;
-    if(!options.input.length) {
-      afGooglePlace.hide({});
-    }
-    else {
-      autocompleteService.getPlacePredictions(options, function(predictions, status) {
-        if(status != google.maps.places.PlacesServiceStatus.OK) {
-          // alert(status);
-          afGooglePlace.hide({});
-          return;
-        }
-        else {
-          afGooglePlace.updatePredictions(predictions, {});
-        }
-      });
-    }
-  };
+    //autocompleteservice (custom)
+    // http://stackoverflow.com/questions/14414445/google-maps-api-v3-cant-geocode-autocompleteservice-predictions
+    // https://developers.google.com/maps/documentation/javascript/examples/place-details
+    // http://stackoverflow.com/questions/14343965/google-places-library-without-map
+    var autocompleteService =new google.maps.places.AutocompleteService();
+    ele.onkeyup =function(evt, params) {
+      options.input =ele.value;
+      if(!options.input.length) {
+        afGooglePlace.hide({});
+      }
+      else {
+        autocompleteService.getPlacePredictions(options, function(predictions, status) {
+          if(status != google.maps.places.PlacesServiceStatus.OK) {
+            // alert(status);
+            afGooglePlace.hide({});
+            return;
+          }
+          else {
+            afGooglePlace.updatePredictions(predictions, {});
+          }
+        });
+      }
+    };
 
-  // ele.onblur =function(evt, params) {
-  //   var coords =afGooglePlace.getDropdownCoords(eleDropdown, {});
-  //   console.log(coords);    //TESTING
-  //   console.log(evt);
-  //   afGooglePlace.hide({});
-  // };
+    // ele.onblur =function(evt, params) {
+    //   var coords =afGooglePlace.getDropdownCoords(eleDropdown, {});
+    //   console.log(coords);    //TESTING
+    //   console.log(evt);
+    //   afGooglePlace.hide({});
+    // };
 
-  ele.onfocus =function(evt, params) {
-    if(ele.value.length) {
-      afGooglePlace.show({});
-    }
-  };
+    ele.onfocus =function(evt, params) {
+      if(ele.value.length) {
+        afGooglePlace.show({});
+      }
+    };
 
   }
 };
 
 Template.afGooglePlace.helpers({
+  //fix to avoid error for passed in object
+  // - https://github.com/aldeed/meteor-autoform-bs-datepicker/issues/3
+  // - https://github.com/aldeed/meteor-autoform-bs-datepicker/commit/3977aa69b61152cf8c0f731a11676b087d2ec9df
+  atts: function() {
+    var atts =EJSON.clone(this.atts);
+    delete atts.opts;
+    return atts;
+  },
   classes: function() {
     return Session.get('afGooglePlaceClasses');
   }
