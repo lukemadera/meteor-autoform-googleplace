@@ -77,3 +77,13 @@ PropertySchema =new SimpleSchema({
   }
 });
 ```
+
+
+## TODO
+
+- Fix the standard autocomplete UI version to work:
+  - The first version just used the default google autocomplete (Google's UI) and was simple. However, this has some bugs:
+    - on iOS Cordova (only happens when wrapped in an app it seems), the autocomplete results can not be selected (a fastclick timing issue it seems)
+      - http://stackoverflow.com/questions/9972080/cant-tap-on-item-in-google-autocomplete-list-on-mobile
+    - on iOS 3rd party keyboards (e.g. Swift), the autocomplete results do not show up at all as the events do not seem to be firing
+      - http://stackoverflow.com/questions/26080368/ios-8-3rd-party-keyboards-dont-register-javascript-jquery-keyup-keypress-keyd
