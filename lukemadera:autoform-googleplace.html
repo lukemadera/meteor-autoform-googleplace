@@ -1,3 +1,15 @@
 <template name="afGooglePlace">
-  <input type="text" value="{{this.value.fullAddress}}" {{atts}} class='lm-autoform-google-place-input' />
+  <div class='lm-autoform-google-place-input-cont'>
+    <input type="text" value="{{this.value.fullAddress}}" {{atts}} class='lm-autoform-google-place-input' />
+    <div class='lm-autoform-google-place-predictions {{classes.predictions}}'>
+      {{>afGooglePlacePredictions }}
+    </div>
+  </div>
+  <div class='lm-autoform-google-place-attribution'></div>
+</template>
+
+<template name="afGooglePlacePredictions">
+  {{#each predictions}}
+    <div class='lm-autoform-google-place-prediction-item'>{{description}}</div>
+  {{/each}}
 </template>

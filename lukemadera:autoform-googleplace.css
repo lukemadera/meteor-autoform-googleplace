@@ -1,3 +1,25 @@
 .lm-autoform-google-place-input {
   width: 100%;
 }
+
+.lm-autoform-google-place-input-cont {
+  position: relative;
+}
+.lm-autoform-google-place-predictions {
+  position: absolute;
+  z-index: 99999;
+  width: 100%;
+  background-color: white;
+  border-bottom: solid 1px black;
+  border-left: solid 1px black;
+  border-right: solid 1px black;
+  padding: 5px 0;
+  display: none;
+}
+.lm-autoform-google-place-predictions.visible {
+  display: block;
+}
+
+.lm-autoform-google-place-prediction-item {
+  cursor: pointer;
+}

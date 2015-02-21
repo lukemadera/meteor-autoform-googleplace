@@ -15,6 +15,7 @@ Package.onUse(function(api) {
   api.use('templating@1.0.0');
   api.use('blaze@2.0.0');
   api.use('aldeed:autoform@4.0.0');
+  api.use('session@1.0.0');
   api.addFiles([
     'lukemadera:autoform-googleplace.html',
     'lukemadera:autoform-googleplace.css',
