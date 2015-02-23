@@ -1,6 +1,6 @@
 Package.describe({
   name: 'lukemadera:autoform-googleplace',
-  version: '0.0.7',
+  version: '0.0.8',
   // Brief, one-line summary of the package.
   summary: 'Google Places Autocomplete input (without map). Returns an object with formatted address components',
   // URL to the Git repository containing the source code for this package.
@@ -17,14 +17,14 @@ Package.onUse(function(api) {
   api.use('aldeed:autoform@4.0.0');
   api.use('session@1.0.0');
   api.addFiles([
-    'lukemadera:autoform-googleplace.html',
-    'lukemadera:autoform-googleplace.css',
-    'lukemadera:autoform-googleplace.js'
+    'lukemadera_autoform-googleplace.html',
+    'lukemadera_autoform-googleplace.css',
+    'lukemadera_autoform-googleplace.js'
   ], 'client');
 });
 
 Package.onTest(function(api) {
   api.use('tinytest');
   api.use('lukemadera:autoform-googleplace');
-  api.addFiles('lukemadera:autoform-googleplace-tests.js');
+  api.addFiles('lukemadera_autoform-googleplace-tests.js');
 });
