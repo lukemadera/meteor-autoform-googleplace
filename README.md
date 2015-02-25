@@ -3,6 +3,13 @@
 An add-on Meteor package for aldeed:autoform. Provides a single custom input type, "googleplace", which renders an input that is given Google Places Autocomplete functionality (but without any map; just a pure input box) and that returns an object with `fullAddress`, `lat`, `lng`, `street`, `city`, `state`, `zip`, `country`.
 https://developers.google.com/maps/documentation/javascript/examples/places-autocomplete
 
+This DOES work when wrapped in Phonegap / Cordova AND with iOS8 and 3rd party keyboards (which the default GoogleUI places autocomplete does NOT)!
+More info:
+- on iOS Cordova (only happens when wrapped in an app it seems), the autocomplete results can not be selected (a fastclick timing issue it seems)
+  - http://stackoverflow.com/questions/9972080/cant-tap-on-item-in-google-autocomplete-list-on-mobile
+- on iOS 3rd party keyboards (e.g. Swift), the autocomplete results do not show up at all as the (keyup) events do not fire
+  - http://stackoverflow.com/questions/26080368/ios-8-3rd-party-keyboards-dont-register-javascript-jquery-keyup-keypress-keyd
+
 
 ## Demo
 
@@ -28,10 +35,10 @@ meteor add lukemadera:autoform-googleplace
 
 ## Usage
 
-Specify "googleplace" for the `type` attribute of any input and set teh SimpleSchema to be an object:
+Specify "googleplace" for the `type` attribute of any input and set the SimpleSchema to be an object:
 
 ```html
-{{> afQuickField name="address" type="googleplace"}}
+{{> afQuickField name="address" type="googleplace" opts=optsGoogleplace}}
 ```
 
 In the schema, which will then work with a `quickForm` or `afQuickFields`:
@@ -76,14 +83,19 @@ PropertySchema =new SimpleSchema({
     optional: true
   }
 });
+
+Template.autoformGoogleplaceBasic.helpers({
+  optsGoogleplace: function() {
+    return {
+      // type: 'googleUI',
+      // stopTimeoutOnKeyup: false
+    }
+  }
+});
 ```
 
 
-## TODO
+### Options
 
-- Fix the standard autocomplete UI version to work:
-  - The first version just used the default google autocomplete (Google's UI) and was simple. However, this has some bugs:
-    - on iOS Cordova (only happens when wrapped in an app it seems), the autocomplete results can not be selected (a fastclick timing issue it seems)
-      - http://stackoverflow.com/questions/9972080/cant-tap-on-item-in-google-autocomplete-list-on-mobile
-    - on iOS 3rd party keyboards (e.g. Swift), the autocomplete results do not show up at all as the events do not seem to be firing
-      - http://stackoverflow.com/questions/26080368/ios-8-3rd-party-keyboards-dont-register-javascript-jquery-keyup-keypress-keyd
+See the [documentation at the top of the javascript file](https://github.com/lukemadera/meteor-autoform-googleplace/blob/master/lukemadera_autoform-googleplace.js) for options you can pass in to customize.
+

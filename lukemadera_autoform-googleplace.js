@@ -1,3 +1,9 @@
+/**
+@param {Object} [atts.opts]
+  @param {String} [type ='service'] Set to 'googleUI' to use the Google Place UI (will NOT work on all mobile devices, especially iOS with 3rd party keyboards)
+  @param {Boolean} [stopTimeoutOnKeyup =true] Set to false to keep running the timeout that auto-triggers showing predictions for 3rd party iOS keyboards where the keyup event does not fire. For performance, this defaults to true to kill the timeout as soon as we get a keyup event. This usually works, however, if the user switches back and forth between a 3rd party keyboard and a regular one, this will cause the 3rd party keyboard to NOT work anymore since a keyup event was registered (on the regular keyboard). So if you want this to be foolproof - albeit worse for performance, set this to false.
+*/
+
 var VAL ={};
 var OPTS ={};
 
@@ -9,6 +15,15 @@ var ELES ={
   input: false,
   googleAttribution: false
 };
+
+var TIMEOUTHACK ={
+  lastVal: '',
+  trigJustSelectedVal: false,
+  times: {
+    keyup: 500,
+    selectedVal: 1000   //must be LONGER than keyup timeout time
+  }
+}
 
 Session.set('afGooglePlacePredictions', []);
 Session.set('afGooglePlaceClasses', CLASSES);
@@ -106,6 +121,7 @@ var afGooglePlace ={
       if(status == google.maps.places.PlacesServiceStatus.OK) {
         var val =self.updatePlace(placePrediction.description, place, {});
         ELES.input.value =val.fullAddress;
+        TIMEOUTHACK.lastVal =ELES.input.value;   //update for next time
         self.hide();
       }
       else {
@@ -163,11 +179,22 @@ AutoForm.addInputType("googleplace", {
 });
 
 Template.afGooglePlace.rendered =function() {
+  var optsDefault ={
+    type: 'service',
+    stopTimeoutOnKeyup: true
+  };
   OPTS =EJSON.clone(this.data.atts.opts);
   if(OPTS ===undefined) {
-    OPTS ={
-      type: 'service'
-    };
+    OPTS =EJSON.clone(optsDefault);
+  }
+  else {
+    //extend
+    var xx;
+    for(xx in optsDefault) {
+      if(OPTS[xx] ===undefined) {
+        OPTS[xx] =optsDefault[xx];
+      }
+    }
   }
 
   // var self =this;
@@ -183,7 +210,7 @@ Template.afGooglePlace.rendered =function() {
     componentRestrictions: componentRestrictions
   };
 
-  if(OPTS.type =='standard') {
+  if(OPTS.type =='googleUI') {
     //standard autocomplete
     var autocomplete = new google.maps.places.Autocomplete(ele, options);
 
@@ -196,24 +223,58 @@ Template.afGooglePlace.rendered =function() {
     // http://stackoverflow.com/questions/14414445/google-maps-api-v3-cant-geocode-autocompleteservice-predictions
     // https://developers.google.com/maps/documentation/javascript/examples/place-details
     // http://stackoverflow.com/questions/14343965/google-places-library-without-map
-    var autocompleteService =new google.maps.places.AutocompleteService();
-    ele.onkeyup =function(evt, params) {
+
+    //3rd party iOS mobile keyboards do NOT fire the events properly so we need to do a timeout. To handle this, we'll auto run the event handlers with a periodic timeout but then if we DO get an event, we'll stop the timeout since we have now "detected" the keyboard is not 3rd party (or at least that it's working)
+    var eventsFiring =false;    //default - once we get an event, we'll reset this
+    TIMEOUTHACK.lastVal =ele.value;   //save to compare to track if a change happened
+
+    var timeoutTriggerEvents =function(params) {
+      setTimeout(function() {
+        if(!eventsFiring) {
+          if(!TIMEOUTHACK.trigJustSelectedVal) {
+            handleKeyup(false, {});
+          }
+          timeoutTriggerEvents({});   //call again
+        }
+      }, TIMEOUTHACK.times.keyup);
+    };
+
+    var handleKeyup =function(evt, params) {
       options.input =ele.value;
       if(!options.input.length) {
         afGooglePlace.hide({});
       }
       else {
-        autocompleteService.getPlacePredictions(options, function(predictions, status) {
-          if(status != google.maps.places.PlacesServiceStatus.OK) {
-            // alert(status);
-            afGooglePlace.hide({});
-            return;
-          }
-          else {
-            afGooglePlace.updatePredictions(predictions, {});
-          }
-        });
+        if(ele.value !==TIMEOUTHACK.lastVal) {
+          autocompleteService.getPlacePredictions(options, function(predictions, status) {
+            if(status != google.maps.places.PlacesServiceStatus.OK) {
+              // alert(status);
+              afGooglePlace.hide({});
+              return;
+            }
+            else {
+              afGooglePlace.updatePredictions(predictions, {});
+            }
+          });
+          TIMEOUTHACK.lastVal =ele.value;   //update for next time
+        }
       }
+    };
+
+    var handleFocus =function(evt, params) {
+      if(ele.value.length) {
+        afGooglePlace.show({});
+      }
+    };
+
+
+
+    var autocompleteService =new google.maps.places.AutocompleteService();
+    ele.onkeyup =function(evt, params) {
+      if(OPTS.stopTimeoutOnKeyup) {
+        eventsFiring =true;   //update trigger; stop timeout
+      }
+      handleKeyup(evt, params);
     };
 
     // ele.onblur =function(evt, params) {
@@ -224,10 +285,11 @@ Template.afGooglePlace.rendered =function() {
     // };
 
     ele.onfocus =function(evt, params) {
-      if(ele.value.length) {
-        afGooglePlace.show({});
-      }
+      handleFocus(evt, params);
     };
+
+    //start timeout going
+    timeoutTriggerEvents({});
 
   }
 };
@@ -254,6 +316,12 @@ Template.afGooglePlacePredictions.helpers({
 
 Template.afGooglePlacePredictions.events({
   'click .lm-autoform-google-place-prediction-item': function(evt, template) {
+
+    TIMEOUTHACK.trigJustSelectedVal =true;
+    setTimeout(function() {
+      TIMEOUTHACK.trigJustSelectedVal =false;
+    }, TIMEOUTHACK.times.selectedVal);
+
     afGooglePlace.getPlace(ELES.input.value, this, {});
   }
 });
