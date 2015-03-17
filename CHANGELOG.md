@@ -1,3 +1,12 @@
+# 1.0.1 (2015-03-17)
+
+## Features
+- update for autoform v5.0
+
+## Bug Fixes
+- fix instance issue where dropdown would disappear or show old values sometimes after the first use
+
+
 # 1.0.0 (2015-02-25)
 
 ## Features

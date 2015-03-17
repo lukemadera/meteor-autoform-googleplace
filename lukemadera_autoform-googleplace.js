@@ -1,4 +1,8 @@
 /**
+@todo
+- properly instance (by attached to element data itself??)
+  - was having an issue where old values / instances were still being used here sometimes.. was showing up as a timeout still firing and `ele.value` being different values on different calls which led to odd behavior.. Currently switching to `ELES.input` instead of `ele` seems to have fixed it but probably should fix the underlying problem?
+
 @param {Object} [atts.opts]
   @param {String} [type ='service'] Set to 'googleUI' to use the Google Place UI (will NOT work on all mobile devices, especially iOS with 3rd party keyboards)
   @param {Boolean} [stopTimeoutOnKeyup =true] Set to false to keep running the timeout that auto-triggers showing predictions for 3rd party iOS keyboards where the keyup event does not fire. For performance, this defaults to true to kill the timeout as soon as we get a keyup event. This usually works, however, if the user switches back and forth between a 3rd party keyboard and a regular one, this will cause the 3rd party keyboard to NOT work anymore since a keyup event was registered (on the regular keyboard). So if you want this to be foolproof - albeit worse for performance, set this to false.
@@ -22,8 +26,13 @@ var TIMEOUTHACK ={
   times: {
     keyup: 500,
     selectedVal: 1000   //must be LONGER than keyup timeout time
+  },
+  trigs: {
+    keyup: false
   }
 }
+
+var AUTOCOMPLETESERVICE =false;
 
 Session.set('afGooglePlacePredictions', []);
 Session.set('afGooglePlaceClasses', CLASSES);
@@ -130,9 +139,29 @@ var afGooglePlace ={
     });
   },
 
+  getPredictions: function(options, params) {
+    var self =this;
+    AUTOCOMPLETESERVICE.getPlacePredictions(options, function(predictions, status) {
+      if(status != google.maps.places.PlacesServiceStatus.OK) {
+        // alert(status);
+        self.hide({});
+        return;
+      }
+      else {
+        self.updatePredictions(predictions, params);
+      }
+    });
+  },
+
+  /**
+  @param {Object} params
+    @param {Boolean} [noShow] True to NOT show dropdown
+  */
   updatePredictions: function(predictions, params) {
     Session.set('afGooglePlacePredictions', predictions);
-    this.show({});
+    if(params.noShow ===undefined || !params.noShow) {
+      this.show({});
+    }
   },
 
   hide: function(params) {
@@ -179,6 +208,14 @@ AutoForm.addInputType("googleplace", {
 });
 
 Template.afGooglePlace.rendered =function() {
+  //reset (any past instances)
+  if(TIMEOUTHACK.trigs.keyup) {
+    clearTimeout(TIMEOUTHACK.trigs.keyup);
+  }
+  if(!AUTOCOMPLETESERVICE) {
+    AUTOCOMPLETESERVICE =new google.maps.places.AutocompleteService();
+  }
+
   var optsDefault ={
     type: 'service',
     stopTimeoutOnKeyup: true
@@ -212,10 +249,10 @@ Template.afGooglePlace.rendered =function() {
 
   if(OPTS.type =='googleUI') {
     //standard autocomplete
-    var autocomplete = new google.maps.places.Autocomplete(ele, options);
+    var autocomplete = new google.maps.places.Autocomplete(ELES.input, options);
 
     google.maps.event.addListener(autocomplete, 'place_changed', function() {
-      afGooglePlace.updatePlace(ele.value, autocomplete.getPlace(), {});
+      afGooglePlace.updatePlace(ELES.input.value, autocomplete.getPlace(), {});
     });
   }
   else {
@@ -226,10 +263,10 @@ Template.afGooglePlace.rendered =function() {
 
     //3rd party iOS mobile keyboards do NOT fire the events properly so we need to do a timeout. To handle this, we'll auto run the event handlers with a periodic timeout but then if we DO get an event, we'll stop the timeout since we have now "detected" the keyboard is not 3rd party (or at least that it's working)
     var eventsFiring =false;    //default - once we get an event, we'll reset this
-    TIMEOUTHACK.lastVal =ele.value;   //save to compare to track if a change happened
+    TIMEOUTHACK.lastVal =ELES.input.value;   //save to compare to track if a change happened
 
     var timeoutTriggerEvents =function(params) {
-      setTimeout(function() {
+      TIMEOUTHACK.trigs.keyup =setTimeout(function() {
         if(!eventsFiring) {
           if(!TIMEOUTHACK.trigJustSelectedVal) {
             handleKeyup(false, {});
@@ -240,56 +277,56 @@ Template.afGooglePlace.rendered =function() {
     };
 
     var handleKeyup =function(evt, params) {
-      options.input =ele.value;
+      // options.input =ele.value;    //does not work - init / instance id issue - will 
+      options.input =ELES.input.value;
       if(!options.input.length) {
         afGooglePlace.hide({});
       }
       else {
-        if(ele.value !==TIMEOUTHACK.lastVal) {
-          autocompleteService.getPlacePredictions(options, function(predictions, status) {
-            if(status != google.maps.places.PlacesServiceStatus.OK) {
-              // alert(status);
-              afGooglePlace.hide({});
-              return;
-            }
-            else {
-              afGooglePlace.updatePredictions(predictions, {});
-            }
-          });
-          TIMEOUTHACK.lastVal =ele.value;   //update for next time
+        if(ELES.input.value !==TIMEOUTHACK.lastVal) {
+          afGooglePlace.getPredictions(options, {});
+          TIMEOUTHACK.lastVal =ELES.input.value;   //update for next time
         }
       }
     };
 
     var handleFocus =function(evt, params) {
-      if(ele.value.length) {
+      if(ELES.input.value.length) {
         afGooglePlace.show({});
       }
     };
 
 
 
-    var autocompleteService =new google.maps.places.AutocompleteService();
-    ele.onkeyup =function(evt, params) {
+    ELES.input.onkeyup =function(evt, params) {
       if(OPTS.stopTimeoutOnKeyup) {
         eventsFiring =true;   //update trigger; stop timeout
       }
       handleKeyup(evt, params);
     };
 
-    // ele.onblur =function(evt, params) {
+    // ELES.input.onblur =function(evt, params) {
     //   var coords =afGooglePlace.getDropdownCoords(eleDropdown, {});
     //   console.log(coords);    //TESTING
     //   console.log(evt);
     //   afGooglePlace.hide({});
     // };
 
-    ele.onfocus =function(evt, params) {
+    ELES.input.onfocus =function(evt, params) {
       handleFocus(evt, params);
     };
 
     //start timeout going
     timeoutTriggerEvents({});
+
+    //init
+    if(ELES.input.value && ELES.input.value.length) {
+      options.input =ELES.input.value;
+      afGooglePlace.getPredictions(options, {noShow:true});
+    }
+    else {
+      afGooglePlace.hide({});  
+    }
 
   }
 };
