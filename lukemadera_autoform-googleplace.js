@@ -5,7 +5,7 @@
 
 @param {Object} [atts.opts]
   @param {String} [type ='service'] Set to 'googleUI' to use the Google Place UI (will NOT work on all mobile devices, especially iOS with 3rd party keyboards)
-  @param {Boolean} [stopTimeoutOnKeyup =true] Set to false to keep running the timeout that auto-triggers showing predictions for 3rd party iOS keyboards where the keyup event does not fire. For performance, this defaults to true to kill the timeout as soon as we get a keyup event. This usually works, however, if the user switches back and forth between a 3rd party keyboard and a regular one, this will cause the 3rd party keyboard to NOT work anymore since a keyup event was registered (on the regular keyboard). So if you want this to be foolproof - albeit worse for performance, set this to false.
+  @param {Boolean} [stopTimeoutOnKeyup =false] Set to false to keep running the timeout that auto-triggers showing predictions for 3rd party iOS keyboards where the keyup event does not fire. For performance, this defaults to true to kill the timeout as soon as we get a keyup event. This usually works, however, if the user switches back and forth between a 3rd party keyboard and a regular one, this will cause the 3rd party keyboard to NOT work anymore since a keyup event was registered (on the regular keyboard). So if you want this to be foolproof - albeit worse for performance, set this to false.
 */
 
 var VAL ={};
@@ -218,7 +218,8 @@ Template.afGooglePlace.rendered =function() {
 
   var optsDefault ={
     type: 'service',
-    stopTimeoutOnKeyup: true
+    // stopTimeoutOnKeyup: true
+    stopTimeoutOnKeyup: false
   };
   OPTS =EJSON.clone(this.data.atts.opts);
   if(OPTS ===undefined) {

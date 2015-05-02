@@ -1,3 +1,9 @@
+# 1.0.2 (2015-05-02)
+
+## Bug Fixes
+- change to default `stopTimeoutOnKeyup` option to false since some Android Cordova apps were not displaying results. Worse for performance but should fix this issue.
+
+
 # 1.0.1 (2015-03-17)
 
 ## Features
