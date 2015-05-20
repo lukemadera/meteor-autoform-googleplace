@@ -1,3 +1,9 @@
+# 1.0.3 (2015-05-19)
+
+## Features
+- add `googleOptions` pass through option for customization and no longer default to US countries only
+
+
 # 1.0.2 (2015-05-02)
 
 ## Bug Fixes

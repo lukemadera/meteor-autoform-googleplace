@@ -6,6 +6,9 @@
 @param {Object} [atts.opts]
   @param {String} [type ='service'] Set to 'googleUI' to use the Google Place UI (will NOT work on all mobile devices, especially iOS with 3rd party keyboards)
   @param {Boolean} [stopTimeoutOnKeyup =false] Set to false to keep running the timeout that auto-triggers showing predictions for 3rd party iOS keyboards where the keyup event does not fire. For performance, this defaults to true to kill the timeout as soon as we get a keyup event. This usually works, however, if the user switches back and forth between a 3rd party keyboard and a regular one, this will cause the 3rd party keyboard to NOT work anymore since a keyup event was registered (on the regular keyboard). So if you want this to be foolproof - albeit worse for performance, set this to false.
+  @param {Object} [googleOptions] The google autocomplete options, such as:
+    @param {Array} [types =[]]
+    @param {Object} [componentRestrictions ={}]
 */
 
 var VAL ={};
@@ -221,13 +224,13 @@ Template.afGooglePlace.rendered =function() {
     // stopTimeoutOnKeyup: true
     stopTimeoutOnKeyup: false
   };
+  var xx;
   OPTS =EJSON.clone(this.data.atts.opts);
   if(OPTS ===undefined) {
     OPTS =EJSON.clone(optsDefault);
   }
   else {
     //extend
-    var xx;
     for(xx in optsDefault) {
       if(OPTS[xx] ===undefined) {
         OPTS[xx] =optsDefault[xx];
@@ -241,12 +244,18 @@ Template.afGooglePlace.rendered =function() {
   ELES.googleAttribution =this.find('div.lm-autoform-google-place-attribution');
   var eleDropdown =this.find('div.lm-autoform-google-place-predictions');
   var types =[];    //either [blank] or one or more of: 'establishment', 'geocode'
-  var componentRestrictions ={country:'us'};
+  var componentRestrictions ={};
   var options = {
     //bounds: defaultBounds,
     types: types,
     componentRestrictions: componentRestrictions
   };
+  if(OPTS.googleOptions !==undefined) {
+    //extend
+    for(xx in OPTS.googleOptions) {
+      options[xx] =OPTS.googleOptions[xx];
+    }
+  }
 
   if(OPTS.type =='googleUI') {
     //standard autocomplete
