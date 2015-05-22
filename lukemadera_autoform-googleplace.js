@@ -1,7 +1,4 @@
 /**
-@todo
-- properly instance (by attached to element data itself??)
-  - was having an issue where old values / instances were still being used here sometimes.. was showing up as a timeout still firing and `ele.value` being different values on different calls which led to odd behavior.. Currently switching to `ELES.input` instead of `ele` seems to have fixed it but probably should fix the underlying problem?
 
 @param {Object} [atts.opts]
   @param {String} [type ='service'] Set to 'googleUI' to use the Google Place UI (will NOT work on all mobile devices, especially iOS with 3rd party keyboards)
@@ -11,38 +8,11 @@
     @param {Object} [componentRestrictions ={}]
 */
 
-var VAL ={};
-var OPTS ={};
-
-var CLASSES ={
-  predictions: 'hidden'
-};
-
-var ELES ={
-  input: false,
-  googleAttribution: false
-};
-
-var TIMEOUTHACK ={
-  lastVal: '',
-  trigJustSelectedVal: false,
-  times: {
-    keyup: 500,
-    selectedVal: 1000   //must be LONGER than keyup timeout time
-  },
-  trigs: {
-    keyup: false
-  }
-}
-
-var AUTOCOMPLETESERVICE =false;
-
-Session.set('afGooglePlacePredictions', []);
-Session.set('afGooglePlaceClasses', CLASSES);
+var VAL ={};    //one per instid
 
 var afGooglePlace ={
 
-  updatePlace: function(val, place, params) {
+  updatePlace: function(templateInst, val, place, params) {
     var self =this;
     var loc ={
       lat: '',
@@ -65,8 +35,9 @@ var afGooglePlace ={
 
     // ele.googleplace('val', loc);
     // this.value =loc;
-    VAL =loc;
-    return VAL;
+    var instid =templateInst.data.atts['data-schema-key'];
+    VAL[instid] =loc;
+    return VAL[instid];
   },
 
   /**
@@ -126,15 +97,15 @@ var afGooglePlace ={
     return address;
   },
 
-  getPlace: function(inputVal, placePrediction, params) {
+  getPlace: function(templateInst, inputVal, placePrediction, params) {
     var self =this;
-    var placeService = new google.maps.places.PlacesService(ELES.googleAttribution);
+    var placeService = new google.maps.places.PlacesService(templateInst.eles.googleAttribution);
     placeService.getDetails({placeId: placePrediction.place_id}, function(place, status) {
       if(status == google.maps.places.PlacesServiceStatus.OK) {
-        var val =self.updatePlace(placePrediction.description, place, {});
-        ELES.input.value =val.fullAddress;
-        TIMEOUTHACK.lastVal =ELES.input.value;   //update for next time
-        self.hide();
+        var val =self.updatePlace(templateInst, placePrediction.description, place, {});
+        templateInst.eles.input.value =val.fullAddress;
+        templateInst.timeouthack.lastVal =templateInst.eles.input.value;   //update for next time
+        self.hide(templateInst, {});
       }
       else {
         alert('google maps PlacesService error getting place with placeId: '+placeId);
@@ -142,16 +113,26 @@ var afGooglePlace ={
     });
   },
 
-  getPredictions: function(options, params) {
+  /**
+  @param {Object} options
+    @param {String} input Element value
+  @param {Object} params
+    @param {Boolean} [noShow] True to NOT display predictions
+    @param {Boolean} [setVal] True to also set the value (i.e. for init)
+  */
+  getPredictions: function(templateInst, options, params) {
     var self =this;
-    AUTOCOMPLETESERVICE.getPlacePredictions(options, function(predictions, status) {
+    templateInst.autocompleteservice.getPlacePredictions(options, function(predictions, status) {
       if(status != google.maps.places.PlacesServiceStatus.OK) {
         // alert(status);
-        self.hide({});
+        self.hide(templateInst, {});
         return;
       }
       else {
-        self.updatePredictions(predictions, params);
+        self.updatePredictions(templateInst, predictions, params);
+        if(params.setVal) {
+          self.getPlace(templateInst, options.input, predictions[0], {});
+        }
       }
     });
   },
@@ -160,21 +141,23 @@ var afGooglePlace ={
   @param {Object} params
     @param {Boolean} [noShow] True to NOT show dropdown
   */
-  updatePredictions: function(predictions, params) {
-    Session.set('afGooglePlacePredictions', predictions);
+  updatePredictions: function(templateInst, predictions, params) {
+    templateInst.predictions.set(predictions);
     if(params.noShow ===undefined || !params.noShow) {
-      this.show({});
+      this.show(templateInst, {});
     }
   },
 
-  hide: function(params) {
-    CLASSES.predictions ='hidden';
-    Session.set('afGooglePlaceClasses', CLASSES);
+  hide: function(templateInst, params) {
+    var classes =templateInst.classes.get();
+    classes.predictions ='hidden';
+    templateInst.classes.set(classes);
   },
 
-  show: function(params) {
-    CLASSES.predictions ='visible';
-    Session.set('afGooglePlaceClasses', CLASSES);
+  show: function(templateInst, params) {
+    var classes =templateInst.classes.get();
+    classes.predictions ='visible';
+    templateInst.classes.set(classes);
   },
 
   // getDropdownCoords: function(ele, params) {
@@ -195,28 +178,45 @@ var afGooglePlace ={
 AutoForm.addInputType("googleplace", {
   template: "afGooglePlace",
   valueIn: function(val) {
-    if(typeof(val) ==='string') {
-      val ={
-        fullAddress: val
-      }
-    }
-    VAL =val;
+    //will convert to display value later after set / extend opts
     return val;
   },
   valueOut: function() {
-    // return this.googleplace('val');
-    // return this.value;
-    return VAL;
+    var instid =this.attr('data-schema-key');
+    return VAL[instid];
   }
 });
 
+Template.afGooglePlace.created =function() {
+  this.autocompleteservice =new google.maps.places.AutocompleteService();
+  this.timeouthack ={
+    lastVal: '',
+    trigJustSelectedVal: false,
+    times: {
+      keyup: 500,
+      selectedVal: 1000   //must be LONGER than keyup timeout time
+    },
+    trigs: {
+      keyup: false
+    }
+  };
+  this.eles ={
+    input: false,
+    googleAttribution: false
+  };
+  this.opts ={};
+
+  this.predictions =new ReactiveVar([]);
+  this.classes =new ReactiveVar({
+    predictions: 'hidden'
+  });
+};
+
 Template.afGooglePlace.rendered =function() {
+  var templateInst =this;
   //reset (any past instances)
-  if(TIMEOUTHACK.trigs.keyup) {
-    clearTimeout(TIMEOUTHACK.trigs.keyup);
-  }
-  if(!AUTOCOMPLETESERVICE) {
-    AUTOCOMPLETESERVICE =new google.maps.places.AutocompleteService();
+  if(templateInst.timeouthack.trigs.keyup) {
+    clearTimeout(templateInst.timeouthack.trigs.keyup);
   }
 
   var optsDefault ={
@@ -225,23 +225,34 @@ Template.afGooglePlace.rendered =function() {
     stopTimeoutOnKeyup: false
   };
   var xx;
-  OPTS =EJSON.clone(this.data.atts.opts);
-  if(OPTS ===undefined) {
-    OPTS =EJSON.clone(optsDefault);
+  templateInst.opts =EJSON.clone(this.data.atts.opts);
+  if(templateInst.opts ===undefined) {
+    templateInst.opts =EJSON.clone(optsDefault);
   }
   else {
     //extend
     for(xx in optsDefault) {
-      if(OPTS[xx] ===undefined) {
-        OPTS[xx] =optsDefault[xx];
+      if(templateInst.opts[xx] ===undefined) {
+        templateInst.opts[xx] =optsDefault[xx];
       }
     }
   }
 
   // var self =this;
   var ele =this.find('input');
-  ELES.input =ele;
-  ELES.googleAttribution =this.find('div.lm-autoform-google-place-attribution');
+
+  //temporarily set value (just need it to be an object; will set properly later)
+  var val =ele.value;
+  if(typeof(val) ==='string') {
+    val ={
+      fullAddress: val
+    };
+  }
+  var instid =templateInst.data.atts['data-schema-key'];
+  VAL[instid] =val;
+
+  templateInst.eles.input =ele;
+  templateInst.eles.googleAttribution =this.find('div.lm-autoform-google-place-attribution');
   var eleDropdown =this.find('div.lm-autoform-google-place-predictions');
   var types =[];    //either [blank] or one or more of: 'establishment', 'geocode'
   var componentRestrictions ={};
@@ -250,19 +261,19 @@ Template.afGooglePlace.rendered =function() {
     types: types,
     componentRestrictions: componentRestrictions
   };
-  if(OPTS.googleOptions !==undefined) {
+  if(templateInst.opts.googleOptions !==undefined) {
     //extend
-    for(xx in OPTS.googleOptions) {
-      options[xx] =OPTS.googleOptions[xx];
+    for(xx in templateInst.opts.googleOptions) {
+      options[xx] =templateInst.opts.googleOptions[xx];
     }
   }
 
-  if(OPTS.type =='googleUI') {
+  if(templateInst.opts.type =='googleUI') {
     //standard autocomplete
-    var autocomplete = new google.maps.places.Autocomplete(ELES.input, options);
+    var autocomplete = new google.maps.places.Autocomplete(templateInst.eles.input, options);
 
     google.maps.event.addListener(autocomplete, 'place_changed', function() {
-      afGooglePlace.updatePlace(ELES.input.value, autocomplete.getPlace(), {});
+      afGooglePlace.updatePlace(templateInst, templateInst.eles.input.value, autocomplete.getPlace(), {});
     });
   }
   else {
@@ -273,56 +284,56 @@ Template.afGooglePlace.rendered =function() {
 
     //3rd party iOS mobile keyboards do NOT fire the events properly so we need to do a timeout. To handle this, we'll auto run the event handlers with a periodic timeout but then if we DO get an event, we'll stop the timeout since we have now "detected" the keyboard is not 3rd party (or at least that it's working)
     var eventsFiring =false;    //default - once we get an event, we'll reset this
-    TIMEOUTHACK.lastVal =ELES.input.value;   //save to compare to track if a change happened
+    templateInst.timeouthack.lastVal =templateInst.eles.input.value;   //save to compare to track if a change happened
 
     var timeoutTriggerEvents =function(params) {
-      TIMEOUTHACK.trigs.keyup =setTimeout(function() {
+      templateInst.timeouthack.trigs.keyup =setTimeout(function() {
         if(!eventsFiring) {
-          if(!TIMEOUTHACK.trigJustSelectedVal) {
+          if(!templateInst.timeouthack.trigJustSelectedVal) {
             handleKeyup(false, {});
           }
           timeoutTriggerEvents({});   //call again
         }
-      }, TIMEOUTHACK.times.keyup);
+      }, templateInst.timeouthack.times.keyup);
     };
 
     var handleKeyup =function(evt, params) {
-      // options.input =ele.value;    //does not work - init / instance id issue - will 
-      options.input =ELES.input.value;
+      // options.input =ele.value;    //does not work - init / instance id issue
+      options.input =templateInst.eles.input.value;
       if(!options.input.length) {
-        afGooglePlace.hide({});
+        afGooglePlace.hide(templateInst, {});
       }
       else {
-        if(ELES.input.value !==TIMEOUTHACK.lastVal) {
-          afGooglePlace.getPredictions(options, {});
-          TIMEOUTHACK.lastVal =ELES.input.value;   //update for next time
+        if(templateInst.eles.input.value !==templateInst.timeouthack.lastVal) {
+          afGooglePlace.getPredictions(templateInst, options, {});
+          templateInst.timeouthack.lastVal =templateInst.eles.input.value;   //update for next time
         }
       }
     };
 
     var handleFocus =function(evt, params) {
-      if(ELES.input.value.length) {
-        afGooglePlace.show({});
+      if(templateInst.eles.input.value.length) {
+        afGooglePlace.show(templateInst, {});
       }
     };
 
 
 
-    ELES.input.onkeyup =function(evt, params) {
-      if(OPTS.stopTimeoutOnKeyup) {
+    templateInst.eles.input.onkeyup =function(evt, params) {
+      if(templateInst.opts.stopTimeoutOnKeyup) {
         eventsFiring =true;   //update trigger; stop timeout
       }
       handleKeyup(evt, params);
     };
 
-    // ELES.input.onblur =function(evt, params) {
+    // templateInst.eles.input.onblur =function(evt, params) {
     //   var coords =afGooglePlace.getDropdownCoords(eleDropdown, {});
     //   console.log(coords);    //TESTING
     //   console.log(evt);
-    //   afGooglePlace.hide({});
+    //   afGooglePlace.hide(templateInst, {});
     // };
 
-    ELES.input.onfocus =function(evt, params) {
+    templateInst.eles.input.onfocus =function(evt, params) {
       handleFocus(evt, params);
     };
 
@@ -330,12 +341,12 @@ Template.afGooglePlace.rendered =function() {
     timeoutTriggerEvents({});
 
     //init
-    if(ELES.input.value && ELES.input.value.length) {
-      options.input =ELES.input.value;
-      afGooglePlace.getPredictions(options, {noShow:true});
+    if(templateInst.eles.input.value && templateInst.eles.input.value.length) {
+      options.input =templateInst.eles.input.value;
+      afGooglePlace.getPredictions(templateInst, options, {noShow:true, setVal:true});
     }
     else {
-      afGooglePlace.hide({});  
+      afGooglePlace.hide(templateInst,{});  
     }
 
   }
@@ -351,24 +362,24 @@ Template.afGooglePlace.helpers({
     return atts;
   },
   classes: function() {
-    return Session.get('afGooglePlaceClasses');
+    return Template.instance().classes.get();
   }
 });
 
-Template.afGooglePlacePredictions.helpers({
+Template.afGooglePlace.helpers({
   predictions: function() {
-    return Session.get('afGooglePlacePredictions');
+    return Template.instance().predictions.get();
   }
 });
 
-Template.afGooglePlacePredictions.events({
+Template.afGooglePlace.events({
   'click .lm-autoform-google-place-prediction-item': function(evt, template) {
 
-    TIMEOUTHACK.trigJustSelectedVal =true;
+    template.timeouthack.trigJustSelectedVal =true;
     setTimeout(function() {
-      TIMEOUTHACK.trigJustSelectedVal =false;
-    }, TIMEOUTHACK.times.selectedVal);
+      template.timeouthack.trigJustSelectedVal =false;
+    }, template.timeouthack.times.selectedVal);
 
-    afGooglePlace.getPlace(ELES.input.value, this, {});
+    afGooglePlace.getPlace(template, template.eles.input.value, this, {});
   }
 });

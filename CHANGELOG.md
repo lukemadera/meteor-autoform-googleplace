@@ -1,3 +1,9 @@
+# 1.0.4 (2015-05-22)
+
+## Features
+- refactor to support multiple instances (on same view / page - previously this did not work; could only use one at a time)
+
+
 # 1.0.3 (2015-05-19)
 
 ## Features
