@@ -1,3 +1,9 @@
+# 1.0.5 (2015-08-01)
+
+## Features
+- add geoJSON support (closes #2)
+
+
 # 1.0.4 (2015-05-22)
 
 ## Features
