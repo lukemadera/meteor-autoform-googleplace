@@ -105,7 +105,7 @@ var afGooglePlace ={
     return address;
   },
 
-  getPlace: function(templateInst, inputVal, placePrediction, params) {
+  getPlace: function(templateInst, placePrediction, params) {
     var self =this;
     var placeService = new google.maps.places.PlacesService(templateInst.eles.googleAttribution);
     placeService.getDetails({placeId: placePrediction.place_id}, function(place, status) {
@@ -119,6 +119,26 @@ var afGooglePlace ={
         alert('google maps PlacesService error getting place with placeId: '+placeId);
       }
     });
+  },
+
+  /**
+  Selects either the given prediction OR, if prediction is null or undefined
+   tries to select the currently selected (keyboard) prediction
+  */
+  choosePrediction: function(templateInst, prediction) {
+    templateInst.timeouthack.trigJustSelectedVal =true;
+    setTimeout(function() {
+      templateInst.timeouthack.trigJustSelectedVal =false;
+    }, templateInst.timeouthack.times.selectedVal);
+
+    if(!prediction) {
+      var predictionsSelected =templateInst.predictionsSelected.get();
+      var predictions =templateInst.predictions.get();
+      prediction =predictions[predictionsSelected.index];
+    }
+    if(prediction) {
+      afGooglePlace.getPlace(templateInst, prediction, {});
+    }
   },
 
   /**
@@ -139,7 +159,7 @@ var afGooglePlace ={
       else {
         self.updatePredictions(templateInst, predictions, params);
         if(params.setVal) {
-          self.getPlace(templateInst, options.input, predictions[0], {});
+          self.getPlace(templateInst, predictions[0], {});
         }
       }
     });
@@ -150,9 +170,51 @@ var afGooglePlace ={
     @param {Boolean} [noShow] True to NOT show dropdown
   */
   updatePredictions: function(templateInst, predictions, params) {
+    //add display key for tracking selected prediction for keyboard support
+    predictions.map(function(prediction) {
+      prediction.xDisplay ={
+        selected: ''
+      };
+      return prediction;
+    });
+    //reset index
+    var predictionsSelected =templateInst.predictionsSelected.get();
+    predictionsSelected.index =-1;
+    templateInst.predictionsSelected.set(predictionsSelected);
+
     templateInst.predictions.set(predictions);
     if(params.noShow ===undefined || !params.noShow) {
       this.show(templateInst, {});
+    }
+  },
+
+  /**
+  Handles (keyboard) up / down to change currently selected prediction in dropdown
+  @param {String} change One of 'prev', 'next'
+  */
+  updatePredictionsSelected: function(templateInst, change, params) {
+    var predictionsSelected =templateInst.predictionsSelected.get();
+    var predictions =templateInst.predictions.get();
+    var changed =false;
+    if(change ==='prev' && predictionsSelected.index >0) {
+      predictionsSelected.index--;
+      changed =true;
+    }
+    else if(change ==='next' && predictionsSelected.index <(predictions.length-1)) {
+      predictionsSelected.index++;
+      changed =true;
+    }
+    if(changed) {
+      templateInst.predictionsSelected.set(predictionsSelected);
+      predictions.map(function(prediction, index) {
+        if(index ===predictionsSelected.index) {
+          prediction.xDisplay.selected ='selected';
+        }
+        else {
+          prediction.xDisplay.selected ='';
+        }
+      });
+      templateInst.predictions.set(predictions);
     }
   },
 
@@ -215,6 +277,9 @@ Template.afGooglePlace.created =function() {
   this.opts ={};
 
   this.predictions =new ReactiveVar([]);
+  this.predictionsSelected =new ReactiveVar({
+    index: -1
+  });
   this.classes =new ReactiveVar({
     predictions: 'hidden'
   });
@@ -325,13 +390,37 @@ Template.afGooglePlace.rendered =function() {
       }
     };
 
-
+    templateInst.eles.input.onkeydown =function(evt, params) {
+      if(evt.keyCode ===13) {
+        return false;
+      }
+    };
 
     templateInst.eles.input.onkeyup =function(evt, params) {
-      if(templateInst.opts.stopTimeoutOnKeyup) {
-        eventsFiring =true;   //update trigger; stop timeout
+      //up arrow
+      if(evt.keyCode ===38) {
+        afGooglePlace.show(templateInst, {});
+        afGooglePlace.updatePredictionsSelected(templateInst, 'prev', {});
       }
-      handleKeyup(evt, params);
+      //down arrow
+      else if(evt.keyCode ===40) {
+        afGooglePlace.show(templateInst, {});
+        afGooglePlace.updatePredictionsSelected(templateInst, 'next', {});
+      }
+      //enter
+      else if(evt.keyCode ===13) {
+        afGooglePlace.choosePrediction(templateInst, null);
+      }
+      //escape
+      else if(evt.keyCode ===27) {
+        afGooglePlace.hide(templateInst, {});
+      }
+      else {
+        if(templateInst.opts.stopTimeoutOnKeyup) {
+          eventsFiring =true;   //update trigger; stop timeout
+        }
+        handleKeyup(evt, params);
+      }
     };
 
     // templateInst.eles.input.onblur =function(evt, params) {
@@ -382,12 +471,6 @@ Template.afGooglePlace.helpers({
 
 Template.afGooglePlace.events({
   'click .lm-autoform-google-place-prediction-item': function(evt, template) {
-
-    template.timeouthack.trigJustSelectedVal =true;
-    setTimeout(function() {
-      template.timeouthack.trigJustSelectedVal =false;
-    }, template.timeouthack.times.selectedVal);
-
-    afGooglePlace.getPlace(template, template.eles.input.value, this, {});
+    afGooglePlace.choosePrediction(template, this);
   }
 });

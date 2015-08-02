@@ -1,3 +1,9 @@
+# 1.0.6 (2015-08-02)
+
+## Features
+- add keyboard up, down, escape, enter support (closes #4)
+
+
 # 1.0.5 (2015-08-01)
 
 ## Features

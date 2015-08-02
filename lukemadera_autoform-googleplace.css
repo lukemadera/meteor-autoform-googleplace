@@ -14,7 +14,6 @@
   border-bottom: solid 1px rgb(200,200,200);
   border-left: solid 1px rgb(200,200,200);
   border-right: solid 1px rgb(200,200,200);
-  padding: 0 5px;
   display: none;
   box-sizing: border-box;
 }
@@ -24,4 +23,8 @@
 
 .lm-autoform-google-place-prediction-item {
   cursor: pointer;
+  padding: 0 5px;
+}
+.lm-autoform-google-place-prediction-item.selected {
+  background-color: rgb(200,200,200);
 }
