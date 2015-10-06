@@ -28,3 +28,9 @@
 .lm-autoform-google-place-prediction-item.selected {
   background-color: rgb(200,200,200);
 }
+.lm-autoform-google-place-attribution{
+  min-width:144px;
+  height:18px;
+  background:url('/packages/lukemadera_autoform-googleplace/powered_by_google_on_white.png') no-repeat top right;
+  margin-top:4px;
+}
