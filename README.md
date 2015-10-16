@@ -56,6 +56,13 @@ AddressSchema =new SimpleSchema({
     type: Number,
     decimal: true
   },
+  geometry: {
+    type: Object,
+    blackbox: true
+  },
+  placeId: {
+    type: String
+  },
   street: {
     type: String,
     max: 100

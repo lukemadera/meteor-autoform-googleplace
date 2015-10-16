@@ -26,7 +26,8 @@ var afGooglePlace ={
       city: '',
       state: '',
       zip: '',
-      country: ''
+      country: '',
+      placeId: ''
     };
     
     if(place && place.geometry && place.geometry.location) {
@@ -39,6 +40,7 @@ var afGooglePlace ={
         coordinates: [ place.geometry.location.lng(), place.geometry.location.lat() ]
       };
       loc.fullAddress =(place.formatted_address) ? place.formatted_address : "";
+      loc.placeId =place.place_id;
     }
 
     // ele.googleplace('val', loc);
