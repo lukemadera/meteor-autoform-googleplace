@@ -21,6 +21,9 @@ Package.onUse(function(api) {
     'lukemadera_autoform-googleplace.css',
     'lukemadera_autoform-googleplace.js'
   ], 'client');
+  api.addAssets([
+    'powered_by_google_on_white.png'
+  ],'client');
 });
 
 Package.onTest(function(api) {
