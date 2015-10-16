@@ -1,3 +1,9 @@
+# 1.0.7 (2015-10-16)
+
+## Features
+- return `placeId` for Google `place_id` for looking up any additional information
+
+
 # 1.0.6 (2015-08-02)
 
 ## Features
