@@ -16,6 +16,7 @@ Package.onUse(function(api) {
   api.use('blaze@2.0.0');
   api.use('aldeed:autoform@4.0.0 || 5.0.0');
   api.use('reactive-var@1.0.5');
+  api.use('ejson');
   api.addFiles([
     'lukemadera_autoform-googleplace.html',
     'lukemadera_autoform-googleplace.css',
