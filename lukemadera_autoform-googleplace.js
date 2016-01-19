@@ -27,7 +27,8 @@ var afGooglePlace ={
       state: '',
       zip: '',
       country: '',
-      placeId: ''
+      placeId: '',
+      placeName: '',
     };
     
     if(place && place.geometry && place.geometry.location) {
@@ -40,7 +41,11 @@ var afGooglePlace ={
         coordinates: [ place.geometry.location.lng(), place.geometry.location.lat() ]
       };
       loc.fullAddress =(place.formatted_address) ? place.formatted_address : "";
+      if (place.name !== loc.fullAddress.substring(0, place.name.length)) {
+        loc.fullAddress = place.name + ", " + loc.fullAddress;
+      }
       loc.placeId =place.place_id;
+      loc.placeName = place.name;
     }
 
     // ele.googleplace('val', loc);
