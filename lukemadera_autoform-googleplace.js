@@ -8,7 +8,7 @@
     @param {Object} [componentRestrictions ={}]
 */
 
-var VAL ={};    //one per instid
+var VAL = new ReactiveVar({});
 
 var afGooglePlace ={
 
@@ -27,7 +27,8 @@ var afGooglePlace ={
       state: '',
       zip: '',
       country: '',
-      placeId: ''
+      placeId: '',
+      placeName: '',
     };
     
     if(place && place.geometry && place.geometry.location) {
@@ -40,14 +41,20 @@ var afGooglePlace ={
         coordinates: [ place.geometry.location.lng(), place.geometry.location.lat() ]
       };
       loc.fullAddress =(place.formatted_address) ? place.formatted_address : "";
+      if (place.name !== loc.fullAddress.substring(0, place.name.length)) {
+        loc.fullAddress = place.name + ", " + loc.fullAddress;
+      }
       loc.placeId =place.place_id;
+      loc.placeName = place.name;
     }
 
     // ele.googleplace('val', loc);
     // this.value =loc;
     var instid =templateInst.data.atts['data-schema-key'];
-    VAL[instid] =loc;
-    return VAL[instid];
+    var globalVal = VAL.get();
+    globalVal[instid] = loc;
+    VAL.set(globalVal);
+    return globalVal[instid];
   },
 
   /**
@@ -255,7 +262,8 @@ AutoForm.addInputType("googleplace", {
   },
   valueOut: function() {
     var instid =this.attr('data-schema-key');
-    return VAL[instid];
+    var val = VAL.get();
+    return val[instid];
   }
 });
 
@@ -324,7 +332,9 @@ Template.afGooglePlace.rendered =function() {
     };
   }
   var instid =templateInst.data.atts['data-schema-key'];
-  VAL[instid] =val;
+  var globalVal = VAL.get();
+  globalVal[instid] = val;
+  VAL.set(globalVal);
 
   templateInst.eles.input =ele;
   templateInst.eles.googleAttribution =this.find('div.lm-autoform-google-place-attribution');
