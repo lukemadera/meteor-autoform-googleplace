@@ -85,11 +85,11 @@ var afGooglePlace ={
           if((xx ==='street_number' || xx ==='route') && address.street !==undefined) {
             //prepend
             if(xx ==='street_number') {
-              address.street =addressComponents[ii].short_name + ' ' + address.street;
+              address.street = addressComponents[ii].short_name + ' ' + address.street;
             }
             //append
             else if(xx ==='route') {
-              address.street =address.street + ' ' + addressComponents[ii].short_name;
+              address.street = address.street + ' ' + addressComponents[ii].short_name;
             }
           }
           else {
