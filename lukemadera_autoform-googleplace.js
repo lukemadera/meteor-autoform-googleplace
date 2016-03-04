@@ -66,9 +66,9 @@ var afGooglePlace ={
   @return {Object} address The formatted address
   */
   parseGoogleAddressComponent: function(addressComponents, params) {
-    var address ={};
+    var address = {};
     //go through all address components and pull out the matching types and map them to what we want (city, state)
-    var map ={
+    var map = {
       'street_number': 'street',
       'route': 'street',
       'locality': 'city',
@@ -85,7 +85,7 @@ var afGooglePlace ={
           if((xx ==='street_number' || xx ==='route') && address.street !==undefined) {
             //prepend
             if(xx ==='street_number') {
-              address.street =addressComponents[ii].short_name + ' ' +address.street;
+              address.street =addressComponents[ii].short_name + ' ' + address.street;
             }
             //append
             else if(xx ==='route') {
@@ -94,10 +94,10 @@ var afGooglePlace ={
           }
           else {
             if(xx ==='locality') {
-              address[map[xx]] =addressComponents[ii].long_name;
+              address[map[xx]] = addressComponents[ii].long_name;
             }
             else {
-              address[map[xx]] =addressComponents[ii].short_name;
+              address[map[xx]] = addressComponents[ii].short_name;
             }
           }
         }
