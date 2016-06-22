@@ -109,6 +109,13 @@ var afGooglePlace ={
 
   getPlace: function(templateInst, placePrediction, params) {
     var self =this;
+    if (typeof placePrediction === 'string') {
+      var val =self.updatePlace(templateInst, placePrediction, null, {});
+      templateInst.eles.input.value =val.fullAddress;
+      templateInst.timeouthack.lastVal =templateInst.eles.input.value;   //update for next time
+      self.hide(templateInst, {});
+      return;
+    }
     var placeService = new google.maps.places.PlacesService(templateInst.eles.googleAttribution);
     placeService.getDetails({placeId: placePrediction.place_id}, function(place, status) {
       if(status == google.maps.places.PlacesServiceStatus.OK) {
@@ -474,5 +481,8 @@ Template.afGooglePlace.helpers({
 Template.afGooglePlace.events({
   'click .lm-autoform-google-place-prediction-item': function(evt, template) {
     afGooglePlace.choosePrediction(template, this);
+  },
+  'blur .lm-autoform-google-place-input-cont': function (ev, instance) {
+    afGooglePlace.choosePrediction(instance, ev.target.value);
   }
 });
