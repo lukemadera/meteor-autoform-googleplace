@@ -1,5 +1,5 @@
 Package.describe({
-  name: 'unofficial-v:autoform-googleplace',
+  name: 'unofficial:autoform-googleplace',
   version: '1.0.8',
   // Brief, one-line summary of the package.
   summary: 'Google Places Autocomplete input (without map). Returns an object with formatted address components',
@@ -29,6 +29,6 @@ Package.onUse(function(api) {
 
 Package.onTest(function(api) {
   api.use('tinytest');
-  api.use('unofficial-v:autoform-googleplace');
+  api.use('unofficial:autoform-googleplace');
   api.addFiles('lukemadera_autoform-googleplace-tests.js');
 });
