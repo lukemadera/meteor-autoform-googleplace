@@ -1,6 +1,6 @@
 Package.describe({
   name: 'unofficial:autoform-googleplace',
-  version: '1.0.8',
+  version: '1.0.9',
   // Brief, one-line summary of the package.
   summary: 'Google Places Autocomplete input (without map). Returns an object with formatted address components',
   // URL to the Git repository containing the source code for this package.
