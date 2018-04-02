@@ -1,3 +1,5 @@
+## Abandonware
+
 # lukemadera:autoform-googleplace
 
 An add-on Meteor package for aldeed:autoform. Provides a single custom input type, "googleplace", which renders an input that is given Google Places Autocomplete functionality (but without any map; just a pure input box) and that returns an object with `fullAddress`, `lat`, `lng`, `street`, `city`, `state`, `zip`, `country`.

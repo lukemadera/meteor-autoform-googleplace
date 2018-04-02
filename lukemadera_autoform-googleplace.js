@@ -29,7 +29,7 @@ var afGooglePlace ={
       country: '',
       placeId: ''
     };
-    
+
     if(place && place.geometry && place.geometry.location) {
       loc =self.parseGoogleAddressComponent(place.address_components, {});
 
@@ -109,6 +109,13 @@ var afGooglePlace ={
 
   getPlace: function(templateInst, placePrediction, params) {
     var self =this;
+    if (typeof placePrediction === 'string') {
+      var val =self.updatePlace(templateInst, placePrediction, null, {});
+      templateInst.eles.input.value =val.fullAddress;
+      templateInst.timeouthack.lastVal =templateInst.eles.input.value;   //update for next time
+      self.hide(templateInst, {});
+      return;
+    }
     var placeService = new google.maps.places.PlacesService(templateInst.eles.googleAttribution);
     placeService.getDetails({placeId: placePrediction.place_id}, function(place, status) {
       if(status == google.maps.places.PlacesServiceStatus.OK) {
@@ -399,8 +406,12 @@ Template.afGooglePlace.rendered =function() {
     };
 
     templateInst.eles.input.onkeyup =function(evt, params) {
+      //left and right arrow
+      if (evt.keyCode === 37 && evt.keyCode === 39) {
+        afGooglePlace.hide(templateInst, {});
+      }
       //up arrow
-      if(evt.keyCode ===38) {
+      else if(evt.keyCode ===38) {
         afGooglePlace.show(templateInst, {});
         afGooglePlace.updatePredictionsSelected(templateInst, 'prev', {});
       }
@@ -411,6 +422,11 @@ Template.afGooglePlace.rendered =function() {
       }
       //enter
       else if(evt.keyCode ===13) {
+        var predictionsSelected = templateInst.predictionsSelected.get();
+        var predictionUnselected = predictionsSelected && predictionsSelected.index === -1;
+        if (predictionUnselected) {
+          return afGooglePlace.choosePrediction(templateInst, templateInst.eles.input.value);
+        }
         afGooglePlace.choosePrediction(templateInst, null);
       }
       //escape
@@ -445,7 +461,7 @@ Template.afGooglePlace.rendered =function() {
       afGooglePlace.getPredictions(templateInst, options, {noShow:true, setVal:true});
     }
     else {
-      afGooglePlace.hide(templateInst,{});  
+      afGooglePlace.hide(templateInst,{});
     }
 
   }
